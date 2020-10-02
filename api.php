@@ -37,7 +37,7 @@ if ($input_key != getSecret()) {
                 ];
                 array_push($GLOBALS['config']['zones'], $zone_new);
             };
-            result_array['status'] = 'success';
+            $result_array['status'] = 'success';
             
             break;
 
@@ -51,7 +51,7 @@ if ($input_key != getSecret()) {
                 ];
                 array_push($GLOBALS['config']['clients'], $client_new);
             };
-            result_array['status'] = 'success';
+            $result_array['status'] = 'success';
             
             break;
 
@@ -59,7 +59,7 @@ if ($input_key != getSecret()) {
             if ($_POST['name'] && getZoneByName($_POST['name'])) {
                 modifyZoneByName($_POST['name'], $_POST['name'], $_POST['v4_addr'], $_POST['v6_addr'], $_POST['v6_prefix'], $_POST['v6_cidr']);
             }
-            result_array['status'] = 'success';
+            $result_array['status'] = 'success';
 
             break;
 
@@ -67,19 +67,19 @@ if ($input_key != getSecret()) {
             if ($_POST['name'] && getClientByName($_POST['name'])) {
                 modifyClientByName($_POST['name'], $_POST['name'], $_POST['v4_addr'], $_POST['v6_addr'], $_POST['v6_suffix']);
             }
-            result_array['status'] = 'success';
+            $result_array['status'] = 'success';
 
             break;
 
         case 'del_zone':
             deleteZoneByName($_POST['name']);
-            result_array['status'] = 'success';
+            $result_array['status'] = 'success';
             
             break;
 
         case 'del_client':
             deleteClientByName($_POST['name']);
-            result_array['status'] = 'success';
+            $result_array['status'] = 'success';
             
             break;
         
@@ -99,8 +99,8 @@ if ($input_key != getSecret()) {
 // Setup ip pool
 $_ = setupEnvIpPool();
 // Generate Serial
-$_['meta']['serial'] = $_GLOBALS['config']['serial'];
-$_['meta']['ttl_default'] = $_GLOBALS['config']['ttl_default'];
+$_['meta']['serial'] = $GLOBALS['config']['serial'];
+$_['meta']['ttl_default'] = $GLOBALS['config']['ttl_default'];
 
 // generate nsdata
 $nsdata = readNsdata();
@@ -110,7 +110,7 @@ $nsdata_old = file_get_contents($GLOBALS['config']['bind9_zone_filepath']);
 if ($nsdata != $nsdata_old) {
     $_['meta']['serial'] = date('YmdH');
     $nsdata = readNsdata();
-    file_put_contents($GLOBALS['config']['bind9_zone_filepath'], $nsdata)
+    file_put_contents($GLOBALS['config']['bind9_zone_filepath'], $nsdata);
 }
 
 
