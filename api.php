@@ -84,7 +84,7 @@ if ($input_key != getSecret()) {
             break;
         
         default:
-            result_array['status'] = 'failed';
+            $result_array['status'] = 'failed';
             $result_array['message'] = 'Action not supported.';
     }
 
