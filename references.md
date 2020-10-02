@@ -2,15 +2,6 @@
 
 We use a zone to define a network zone; a client to difine an individual device.
 
-### Areas
-
-options:
-- v4_address optional
-- v6_prefix optional
-- v6_address optional
-
-### Clients
-
 ## Structure
 
 Briefly, we use an area to define a network that shares a same gateway. A client to define a network card.
@@ -43,13 +34,6 @@ IPv6:
 3. Client's address with area's prefix
 4. Area's address with area's prefix
 
-IPv4: 
-1. Look if this client has a v4_address configuration. If yes then use it.
-2. Look for the v4_address of this client's zone. If found, then use it.
-3. If both of the previous two steps failed, then the script will not generate this record.
-
-IPv6:
-1. Combine the zone's prefix and this device's address.
 
 ## API Usage
 
@@ -61,8 +45,35 @@ Generally, you can use this api by POSTing serialized data:
 
 ### Adding
 
-Adding zone, clients:
+Adding zone or clients:
 ```
 ?action=add_zone&name=office&v4_addr=1.1.1.1&v6_prefix=1234::/64
 ?action=add_client&name=my-pc&zone=office&v6_addr=1233:2334:3445:4556
 ```
+
+### Modifying
+
+Modifying zone or clients:
+```
+?action=mod_zone&name=office&v4_addr=1.1.1.1
+```
+
+### Deleting
+
+Deleting zone or clients:
+```
+?action=del_zone&name=office
+```
+
+## Typically usage
+
+### Dynamic IPv6 Address
+
+Here is an example of configuring dynamic IPv6 address on own DDNS server:
+
+- First, adding a zone, configuring a v6 prefix;
+- Second, adding a client, only configure a v6 address's suffix like "::3aa"
+- Then you can only update your home's v6 address's prefix.
+
+### Dynamic IPv4 Address
+

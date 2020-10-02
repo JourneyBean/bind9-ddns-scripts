@@ -1,6 +1,6 @@
 <?php
 
-$ns_data = "
+$nsdata = "
 \$TTL 3600
 \$ORIGIN mewwoof.cn.
 
@@ -11,6 +11,8 @@ $ns_data = "
 	1D			;#expiry
 	1			;#minimum ttl
 );
+
+; please dont delete string '#serial' above - it is managed
 
 @		3600	IN	NS		ns1
 ns1		3600	IN	A		1.2.3.4
@@ -23,9 +25,9 @@ www		3600	IN	A		2.3.4.5
 www		3600	IN	AAAA	2000:1234::1
 
 ; Dynamic Addresses like these:
-cloud	30		IN	A		$_['office']['pc']['v4']
-cloud	30		IN	AAAA	$_['office']['pc']['v6']
-cloud	30		IN	A		$_['pc_no_zone']['v4']
+cloud	30		IN	A		$_['office']['v4']
+cloud	30		IN	AAAA	$_['pc']['v6']
+cloud	30		IN	A		$_['pc']['v4']
 
 ";
 
