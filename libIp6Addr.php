@@ -1,65 +1,102 @@
 <?php
 
 /**
- *  Convert IPv6 address to long int
- *  From Internet, source unknown..
+ *  Expand ipv6 address
  */
-function ip2long6($ipv6) {
-    $ip_n = inet_pton($ipv6);
-    $bits = 15; // 16 x 8 bit = 128bit
-    while ($bits >= 0) {
-        $bin = sprintf("%08b",(ord($ip_n[$bits])));
-        $ipv6long = $bin.$ipv6long;
-        $bits--;
-    }
-    return gmp_strval(gmp_init($ipv6long,2),10);
+function ip6Expand($ip){
+    $hex = unpack("H*hex", inet_pton($ip));         
+    $ip = substr(preg_replace("/([A-f0-9]{4})/", "$1:", $hex['hex']), 0, -1);
+
+    return $ip;
 }
 
 /**
- *  Convert long int to IPv6 address
- *  From Internet, source unknown..
+ *  Pack ipv6 address
  */
-function long2ip6($ipv6long) {
-  
-    $bin = gmp_strval(gmp_init($ipv6long,10),2);
-    if (strlen($bin) < 128) {
-        $pad = 128 - strlen($bin);
-        for ($i = 1; $i <= $pad; $i++) {
-        $bin = "0".$bin;
+function ip6Compress($ip) {
+    return inet_ntop(inet_pton($ip));
+}
+
+/**
+ *  Get ipv6 prefix
+ */
+function ip6GetPrefix($ip, $cidr) {
+    $prefix = '';
+    $ip_expanded = ip6Expand($ip);
+    $ip_grouped = explode(':', $ip_expanded);
+    $ip_grouped_save_num = $cidr/4;
+
+    for ( $i=0; $i<intval($cidr/16); $i++ ) {
+        $prefix = $prefix . $ip_grouped[$i];
+        $prefix = $prefix . ':';
+    }
+
+    // if need to spilt 
+    if ( $cidr%16 ) {
+        for ( $i=0; $i<intval($cidr%16/4); $i++ ) {
+            $prefix = $prefix . substr($ip_grouped[$cidr/16], $i, 1);
         }
+        // if need to cut
+        if ( $cidr%16%4 ) {
+            $current_num = substr($ip_grouped[$cidr/16], $cidr%16/4, 1);
+            $current_num = hexdec($current_num);
+
+            if ( $cidr%16%4 == 3 ) $current_num = $current_num & 0x0E;
+            else if ( $cidr%16%4 == 2 ) $current_num = $current_num & 0x0C;
+            else if ( $cidr%16%4 == 1 ) $current_num = $current_num & 0x08;
+
+            $current_num = dechex($current_num);
+
+            $prefix = $prefix . $current_num;
+        }
+        if (strlen($prefix)<35) $prefix = $prefix . '::';
+    } else {
+        if (strlen($prefix)<36) $prefix = $prefix . ':';
+        else $prefix = substr($prefix, 0, strlen($prefix)-1);
     }
-    $bits = 0;
-    while ($bits <= 7) {
-        $bin_part = substr($bin,($bits*16),16);
-        $ipv6 .= dechex(bindec($bin_part)).":";
-        $bits++;
-    }
-    // compress
-  
-    return inet_ntop(inet_pton(substr($ipv6,0,-1)));
+
+    return ip6Compress($prefix);
 }
 
+/**
+ *  Get ipv6 suffix
+ */
+function ip6GetSuffix(string $ip, int $cidr) {
+    $suffix = '';
+    $ip_expanded = ip6Expand($ip);
+    $ip_grouped = explode(':', $ip_expanded);
+    $cidr = 128-$cidr;
 
-function ip6GetPrefix( string $addr, int $cidr = 128 ) {
-    return (($addr >> $cidr) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF ) << $cidr;
-}
-
-function ip6GetSuffix( string $addr, int $cidr = 0 ) {
-    $host_cidr = 128 - $cidr;
-    return (($addr << $host_cidr) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) >> $host_cidr;
-}
-
-function ip6MergeAddr( string $prefix, string $suffix, $cidr = -1 ) {
-    // Just merge
-    if ( cidr == -1 ) {
-        return $prefix | $suffix;
+    for ( $i=7; $i>7-intval($cidr/16); $i-- ) {
+        $suffix = $ip_grouped[$i] . ':' . $suffix;
     }
-    // Calculate CIDR then merge
-    else {
-        $prefix = ip6GetPrefix($prefix, $cidr);
-        $suffix = ip6GetSuffix($suffix, $cidr);
-        return $prefix | $suffix;
+    $suffix = substr($suffix, 0, strlen($suffix)-1);
+
+    // if need to split
+    if ( $cidr%16 ) {
+        $suffix = ':' . $suffix;
+        for ( $i=3; $i>3-intval($cidr%16/4); $i-- ) {
+            $suffix = substr($ip_grouped[7-intval($cidr/16)], $i, 1) . $suffix;
+        }
+        // if need to cut
+        if ( $cidr%16%4 ) {
+            $current_num = substr($ip_grouped[7-intval($cidr/16)], 3-$cidr%16/4, 1);
+            $current_num = hexdec($current_num);
+
+            if ( $cidr%16%4 == 3 ) $current_num = $current_num & 0x07;
+            else if ( $cidr%16%4 == 2 ) $current_num = $current_num & 0x03;
+            else if ( $cidr%16%4 == 1 ) $current_num = $current_num & 0x01;
+
+            $current_num = dechex($current_num);
+
+            $suffix = $current_num . $suffix;
+        }
+        if (strlen($suffix)<35) $suffix = '::' . $suffix;
+    } else {
+        if (strlen($suffix)<36) $suffix = '::' . $suffix;
     }
+
+    return ip6Compress($suffix);
 }
 
 ?>
