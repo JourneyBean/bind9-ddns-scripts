@@ -20,8 +20,6 @@ loadConfig();
 $input_key = $_POST['key'];
 $input_action = $_POST['action'];
 
-setupEnvConfig();
-
 if ($input_key != getSecret()) {
     // Auth success
     
