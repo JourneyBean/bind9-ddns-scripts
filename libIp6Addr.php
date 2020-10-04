@@ -2,6 +2,7 @@
 
 /**
  *  Expand ipv6 address
+ *  @author From Internet
  */
 function ip6Expand($ip){
     $hex = unpack("H*hex", inet_pton($ip));         
@@ -12,6 +13,8 @@ function ip6Expand($ip){
 
 /**
  *  Pack ipv6 address
+ *  @author Johnson Liu
+ *  @version v1.0
  */
 function ip6Compress($ip) {
     return inet_ntop(inet_pton($ip));
@@ -19,6 +22,8 @@ function ip6Compress($ip) {
 
 /**
  *  Get ipv6 prefix
+ *  @author Johnson Liu
+ *  @version v1.0
  */
 function ip6GetPrefix($ip, $cidr) {
     $prefix = '';
@@ -60,6 +65,8 @@ function ip6GetPrefix($ip, $cidr) {
 
 /**
  *  Get ipv6 suffix
+ *  @author Johnson Liu
+ *  @version v1.0
  */
 function ip6GetSuffix(string $ip, int $cidr) {
     $suffix = '';
@@ -97,6 +104,48 @@ function ip6GetSuffix(string $ip, int $cidr) {
     }
 
     return ip6Compress($suffix);
+}
+
+/**
+ *  Merge ipv6 prefix and suffix into full address.
+ *  @author Johnson Liu
+ *  @version v2.1
+ */
+
+function ip6Merge(string $prefix, string $suffix, int $cidr = 64) {
+    if (!$cidr) $cidr = 64;
+
+    $addr = '';
+    $addr_grouped = [];
+    $prefix_expanded = ip6Expand($prefix);
+    $suffix_expanded = ip6Expand($suffix);
+    $prefix_grouped = explode(':', $prefix_expanded);
+    $suffix_grouped = explode(':', $suffix_expanded);
+
+    for ( $i=0; $i<intval($cidr/16); $i++ ) {
+        $addr_grouped[$i] = $prefix_grouped[$i];
+    }
+    for ( $i=intval($cidr/16); $i<8; $i++ ) {
+        $addr_grouped[$i] = $suffix_grouped[$i];
+    }
+
+    // if need to split
+    if ( $cidr%16 ) {
+        $prefix_temp = hexdec( $prefix_grouped[intval($cidr/16)] );
+        $suffix_temp = hexdec( $suffix_grouped[intval($cidr/16)] );
+        $cidr_temp = $cidr%16;
+        $prefix_temp = $prefix_temp & bindec( str_repeat('1', $cidr_temp) . str_repeat('0', 16-$cidr_temp) );
+        $suffix_temp = $suffix_temp & bindec( str_repeat('0', $cidr_temp) . str_repeat('1', 16-$cidr_temp) );
+        $addr_grouped[intval($cidr/16)] = dechex( $prefix_temp | $suffix_temp );
+    }
+
+    // pack grouped address
+    for ( $i=0; $i<8; $i++ ) {
+        $addr = $addr . $addr_grouped[$i] . ':';
+    }
+    $addr = substr($addr, 0, strlen($addr)-1);
+
+    return ip6Compress($addr);
 }
 
 ?>

@@ -7,17 +7,18 @@
  * 
  */
 
-require_once ('./libConfig.php');
-require_once ('./libEnv.php');
-require_once ('./libNsdata.php');
+require_once(__DIR__ . '/libNsdata.php');
+require_once(__DIR__ . '/libIpPool.php');
+require_once(__DIR__ . '/libConfig.php');
+
+loadConfig();
+
+
+
+
 
 $input_key = $_POST['key'];
 $input_action = $_POST['action'];
-
-$result_array = [
-    'status' => '',
-    'message' => ''
-];
 
 setupEnvConfig();
 
@@ -28,98 +29,79 @@ if ($input_key != getSecret()) {
 
         case 'new_zone':
             if ($_POST['name']) {
-                $zone_new = [
-                    'name' => $_POST['name'],
-                    'v4_addr' => $_POST['v4_addr'],
-                    'v6_addr' => $_POST['v6_addr'],
-                    'v6_prefix' => $_POST['v6_prefix'],
-                    'v6_cidr' => $_POST['v6_cidr']?$_POST['v6_cidr']:''
-                ];
-                array_push($GLOBALS['config']['zones'], $zone_new);
+                addZone($_POST['name'], $_POST['v4_addr'], $_POST['v6_addr'], $_POST['v6_prefix'], $_POST['v6_cidr']);
             };
-            $result_array['status'] = 'success';
-            
             break;
 
         case 'new_client':
             if ($_POST['name']) {
-                $client_new = [
-                    'name' => $_POST['name'],
-                    'v4_addr' => $_POST['v4_addr'],
-                    'v6_addr' => $_POST['v6_addr'],
-                    'v6_suffix' => $_POST['v6_suffix']
-                ];
-                array_push($GLOBALS['config']['clients'], $client_new);
+                addClient($_POST['name'], $_POST['v4_addr'], $_POST['v6_addr'], $_POST['v6_suffix']);
             };
-            $result_array['status'] = 'success';
-            
             break;
 
         case 'mod_zone':
             if ($_POST['name'] && getZoneByName($_POST['name'])) {
                 modifyZoneByName($_POST['name'], $_POST['name'], $_POST['v4_addr'], $_POST['v6_addr'], $_POST['v6_prefix'], $_POST['v6_cidr']);
             }
-            $result_array['status'] = 'success';
-
             break;
 
         case 'mod_client':
             if ($_POST['name'] && getClientByName($_POST['name'])) {
                 modifyClientByName($_POST['name'], $_POST['name'], $_POST['v4_addr'], $_POST['v6_addr'], $_POST['v6_suffix']);
             }
-            $result_array['status'] = 'success';
-
             break;
 
         case 'del_zone':
-            deleteZoneByName($_POST['name']);
-            $result_array['status'] = 'success';
-            
+            if ($_POST['name']) {
+                deleteZoneByName($_POST['name']);
+            }
             break;
 
         case 'del_client':
-            deleteClientByName($_POST['name']);
-            $result_array['status'] = 'success';
-            
+            if ($_POST['name']) {
+                deleteClientByName($_POST['name']);
+            }
             break;
         
         default:
-            $result_array['status'] = 'failed';
-            $result_array['message'] = 'Action not supported.';
+            echo "[ddns-server] " . "[ERR] Operation not supported." . PHP_EOF;
+            exit;
     }
 
 } else {
     // Auth failed
-    $result_array['status'] = 'failed';
-    $result_array['message'] = 'Auth failed.';
-    echo json_encode($result_array);
+    echo "[ddns-server] " . "[ERR] Authentication failed." . PHP_EOF;
     exit;
 }
 
-// Setup ip pool
-$_ = setupEnvIpPool();
-// Generate Serial
-$_['meta']['serial'] = $GLOBALS['config']['serial'];
-$_['meta']['ttl_default'] = $GLOBALS['config']['ttl_default'];
+// old nsdata
+$nsdata_old = file_get_contents(getZonefilePath());
 
-// generate nsdata
-$nsdata = readNsdata();
+// new nsdata generated with old serial
+$ip_pool = getIpPool();
+$nsdata_raw = readNsdata();
+$serial_old = getSerial();
 
-// write nsdata (compare first)
-$nsdata_old = file_get_contents($GLOBALS['config']['bind9_zone_filepath']);
-if ($nsdata != $nsdata_old) {
-    $_['meta']['serial'] = date('YmdH');
-    $nsdata = readNsdata();
-    file_put_contents($GLOBALS['config']['bind9_zone_filepath'], $nsdata);
+$nsdata = translateNsdata($ip_pool, $nsdata_raw, $serial_old);
+
+// compare nsdata
+if ($nsdata_old == $nsdata) {
+    echo "[ddns-server] " . "[INFO] Same profile. Ignoring update request." . PHP_EOF;
+    exit;
 }
 
+// write nsdata
+$serial = date('YmdH');
+$nsdata = translateNsdata($ip_pool, $nsdata_raw, $serial);
+$GLOBALS['config']['serial'] = $serial;
+file_put_contents(getZonefilePath, $nsdata);
 
 // inform bind9 to reload
-system('rndc reload');
+echo "[ddns-server] " . "[INF] " . system('rndc reload') . PHP_EOF;
 
 // write config.php
-writeConfig( $config );
+saveConfig();
 
-echo json_encode($result_array);
+echo "[ddns-server] " . "[OK] Script exec success." . PHP_EOF;
 
 ?>
