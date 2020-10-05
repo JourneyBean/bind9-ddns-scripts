@@ -147,22 +147,22 @@ function deleteClientByName( $client_name ) {
  *  Returns secret key
  */
 function getSecret() {
-    return getConfig['secret'];
+    return getConfig()['secret'];
 }
 
 /**
  *  Returns config.php version
  */
 function getConfigVersion() {
-    return getConfig['version'];
+    return getConfig()['version'];
 }
 
 function getSerialOld() {
-    return getConfig['serial'];
+    return getConfig()['serial'];
 }
 
 function getZonefilePath() {
-    return getConfig['zonefile_path'];
+    return getConfig()['zonefile_path'];
 }
 
 ?>

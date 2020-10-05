@@ -3,7 +3,7 @@
 $config_json = '
 {
     "version": "v1.0",
-    "secret": "xxxxxxxxxxxxx",
+    "secret": "12345",
     "serial": "2020010110",
     "zonefile_path": ".\/managed.zone",
     "ttl_default": 120,
