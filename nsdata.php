@@ -8,7 +8,7 @@ $nsdata = '
 ; because it is used for generate serial number.
 
 $TTL 3600
-$ORIGIN example.com
+$ORIGIN example.com.
 
 @	IN	SOA	ns1	root (
 	\serial\	; do not edit it unless you know

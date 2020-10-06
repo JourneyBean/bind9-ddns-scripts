@@ -1,14 +1,14 @@
 # bind9-ddns-scripts
 
-Provides a simple API set to uodate bind9 NS records.
+Provides a simple API set to update bind9 NS records.
 
 ## Installation
 
-First you need PHP installed on your server. Then simply copy these files to your webroot directory.
+First you need PHP(>=7.2.0 recommended) installed on your server. Then simply copy these files to your webroot directory.
 
 ## Configuration
 
-You have to edit some files to get DDNS sever to work. Generally, configuration file ```config.php``` and zone file ```nsdata.php```.
+You have to edit some files to get DDNS sever to work. Generally, you need to edit configuration file ```config.php``` and zone file ```nsdata.php```.
 
 ### ```config.php``` file: 
 
@@ -36,7 +36,7 @@ This file contains a php string variable which stores formatted json-type config
             "v6_cidr": 56
         },
         {
-            (another zone...)
+            ...
         }
     ],
     ...
@@ -55,12 +55,15 @@ This file contains a php string variable which stores formatted json-type config
             "name": "pc",
             "zone": "office",
             "v6_suffix": "::567"
+        },
+        {
+            ...
         }
     ],
     ...
     ```
 
-#### How to select a client's address
+#### How scripts selecting client's address
 
 The scripts will look for a client's ip address from ```config.php``` obeying the following orders:
 
@@ -76,7 +79,7 @@ For IPv6 address:
 
 1. Look for client's ```v6_addr```, if null then:
 
-2. Look for client's ```v6_suffix``` and ```zone```'s ```v6_prefix``` and ```v6_cidr```. ```v6_cidr``` will be set to ```64``` if null. Then scripts will merge this prefix with suffix as returning address. If ```zone```'s ```v6_prefix``` not found, then:
+2. Look for client's ```v6_suffix``` , ```zone```'s ```v6_prefix``` and ```v6_cidr```. ```v6_cidr``` will be set to ```64``` if null. Then scripts will merge this prefix with suffix as returning address. If ```zone```'s ```v6_prefix``` not found, then:
 
 3. Look for ```zone```'s ```v6_addr```. If null then:
 
@@ -166,18 +169,12 @@ setfacl -m www-data:r-x /etc/bind/rndc.key
 
 ## API Usage
 
-Simply using ```POST``` method to manage your server.
+Simply using ```GET``` method to manage your server.
 
 Here's an example of updating a zone:
 
 ``` sh
-curl --location --request POST 'https://nic.example.com/api.php' \
---header 'Content-Type: application/x-www-form-urlencoded' \
---data-urlencode 'key=12345' \
---data-urlencode 'action=update_zone' \
---data-urlencode 'name=office' \
---data-urlencode 'v4_addr=1.2.3.4' \
---data-urlencode 'v6_prefix=2000:1222:2222:2222:222::'
+curl --location --request GET 'https://nic.example.com/api.php?key=12345&action=update_zone&name=office&v4_addr=1.2.3.4&v6_prefix=2000:1222:2222:2222:222::
 ```
 
 ### ```key```
@@ -200,3 +197,13 @@ For more examples of API Usage, Please refer to ```./examples.md``` .
 #### Differences between update and modify
 
 Action ```update``` will ignore null parameters but ```modify``` will write null parameters into your config. When performing a ip change shot, it's recommend to use ```update``` action.
+
+## Testing Server
+
+When everything is ready, we recommend you test your zone file first. Just using the following command:
+
+``` sh
+bind_testzone example.com /path/to/zonefile.zone
+```
+
+If no error found, then you can enjoy it.
