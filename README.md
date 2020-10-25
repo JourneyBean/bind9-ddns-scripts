@@ -95,7 +95,7 @@ Here's an example:
 
 ```
 $TTL 3600
-$ORIGIN example.com
+$ORIGIN example.com.
 
 @	IN	SOA	ns1	root (
 	\serial\	; do not edit it unless you know
@@ -129,7 +129,7 @@ This file will be generated into this:
 
 ```
 $TTL 3600
-$ORIGIN example.com
+$ORIGIN example.com.
 
 @	IN	SOA	ns1	root (
 	2020101010	; do not edit it unless you know
